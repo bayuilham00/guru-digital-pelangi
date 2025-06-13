@@ -1,15 +1,20 @@
 
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 
-// Import React and Motion from global scope since they're loaded via CDN in main.jsx
-declare global {
-  const React: any;
-  const Motion: any;
-}
-
 const { useState, useEffect } = React;
-const { motion, AnimatePresence } = Motion;
+
+// We'll load Framer Motion dynamically or use a simpler approach for now
+// For now, let's create a simple motion wrapper
+const motion = {
+  div: ({ children, className, initial, animate, transition, whileHover, whileTap, ...props }: any) => 
+    React.createElement('div', { className, ...props }, children),
+  button: ({ children, className, initial, animate, transition, whileHover, whileTap, ...props }: any) => 
+    React.createElement('button', { className, ...props }, children)
+};
+
+const AnimatePresence = ({ children }: any) => React.createElement('div', {}, children);
 
 // Sidebar Component
 const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: string, setActiveMenu: (menu: string) => void }) => {
@@ -77,11 +82,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: string, setActiveM
   ];
 
   return (
-    <motion.div 
-      initial={{ x: -300 }}
-      animate={{ x: 0 }}
-      className="w-72 h-screen sidebar-gradient text-white p-6 shadow-2xl"
-    >
+    <motion.div className="w-72 h-screen sidebar-gradient text-white p-6 shadow-2xl">
       <div className="mb-8">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
           Kelas Guru
@@ -93,8 +94,6 @@ const Sidebar = ({ activeMenu, setActiveMenu }: { activeMenu: string, setActiveM
         {menuItems.map((item) => (
           <motion.button
             key={item.id}
-            whileHover={{ scale: 1.02, x: 5 }}
-            whileTap={{ scale: 0.98 }}
             onClick={() => setActiveMenu(item.id)}
             className={`w-full flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 ${
               activeMenu === item.id 
@@ -202,11 +201,7 @@ const Dashboard = () => {
   return (
     <div className="p-8 space-y-8">
       {/* Welcome Banner */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 rounded-3xl p-8 text-white relative overflow-hidden"
-      >
+      <motion.div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 rounded-3xl p-8 text-white relative overflow-hidden">
         <div className="relative z-10">
           <h1 className="text-3xl font-bold mb-2">Selamat Datang, Devi Saidulloh! 👋</h1>
           <p className="text-blue-100 text-lg">Hari ini adalah kesempatan baru untuk menginspirasi siswa Anda</p>
@@ -225,10 +220,6 @@ const Dashboard = () => {
         {stats.map((stat, index) => (
           <motion.div
             key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.02 }}
             className={`bg-gradient-to-br ${stat.gradient} rounded-2xl p-6 text-white relative overflow-hidden`}
           >
             <div className="relative z-10">
@@ -250,11 +241,7 @@ const Dashboard = () => {
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Classes */}
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
-        >
+        <motion.div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-gray-900">Kelas Terbaru</h3>
             <button className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors">
@@ -266,7 +253,6 @@ const Dashboard = () => {
             {recentClasses.map((kelas, index) => (
               <motion.div
                 key={index}
-                whileHover={{ scale: 1.01 }}
                 className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
               >
                 <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold mr-4">
@@ -292,11 +278,7 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Activities */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
-        >
+        <motion.div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-900">⚡ Aktivitas Terbaru</h3>
             <span className="text-sm text-gray-500">Update terbaru dari kelas Anda</span>
@@ -306,9 +288,6 @@ const Dashboard = () => {
             {activities.map((activity, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
                 className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -362,14 +341,8 @@ const App = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <main className="flex-1 overflow-auto">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeMenu}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
+        <AnimatePresence>
+          <motion.div key={activeMenu}>
             {renderContent()}
           </motion.div>
         </AnimatePresence>
