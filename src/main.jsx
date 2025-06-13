@@ -1,4 +1,3 @@
-
 const { useState, useEffect } = React;
 const { motion, AnimatePresence } = Motion;
 
@@ -667,7 +666,7 @@ const Siswa = () => {
                       </button>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
