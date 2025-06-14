@@ -1,9 +1,8 @@
-
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-
-const { useState, useEffect } = React;
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from './hooks/useAuth'
 
 // We'll load Framer Motion dynamically or use a simpler approach for now
 // For now, let's create a simple motion wrapper
@@ -324,9 +323,12 @@ const PlaceholderContent = ({ title }: { title: string }) => {
   );
 };
 
-// Main App Component
+// Create QueryClient instance
+const queryClient = new QueryClient();
+
+// Main App Component with Authentication
 const App = () => {
-  const [activeMenu, setActiveMenu] = useState('dashboard');
+  const [activeMenu, setActiveMenu] = React.useState('dashboard');
 
   const renderContent = () => {
     switch(activeMenu) {
@@ -338,16 +340,18 @@ const App = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
-      <main className="flex-1 overflow-auto">
-        <AnimatePresence>
-          <motion.div key={activeMenu}>
-            {renderContent()}
-          </motion.div>
-        </AnimatePresence>
-      </main>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <div className="flex min-h-screen bg-gray-50">
+          <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+          <main className="flex-1 overflow-auto">
+            <div key={activeMenu}>
+              {renderContent()}
+            </div>
+          </main>
+        </div>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
 
