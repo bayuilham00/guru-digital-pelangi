@@ -518,11 +518,18 @@ const StudentManager: React.FC = () => {
         <Pagination
           isCompact
           showControls
-          showShadow
+          showShadow={false}
           color="primary"
           page={currentPage}
           total={pages}
           onChange={setCurrentPage}
+          classNames={{
+            wrapper: "gap-0 overflow-visible h-8 rounded border border-white/20",
+            item: "w-8 h-8 text-small rounded-none bg-transparent text-white/60 hover:text-white hover:bg-white/10",
+            cursor: "bg-blue-500 shadow-lg from-blue-500 to-blue-600 text-white font-bold",
+            prev: "text-white/60 hover:text-white hover:bg-white/10",
+            next: "text-white/60 hover:text-white hover:bg-white/10"
+          }}
         />
       </div>
     ) : null;

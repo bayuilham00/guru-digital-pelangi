@@ -82,9 +82,9 @@ const useStudentTableControls = ({
     <div className="flex flex-col gap-4">
       {/* Bulk Actions Bar - Show when items are selected */}
       {hasSelectedItems && (
-        <div className="flex items-center justify-between p-3 bg-primary-50 border border-primary-200 rounded-lg">
+        <div className="flex items-center justify-between p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg backdrop-blur-sm">
           <div className="flex items-center gap-2">
-            <span className="text-primary-700 font-medium">
+            <span className="text-blue-300 font-medium">
               {selectedCount} siswa dipilih
             </span>
           </div>
@@ -95,6 +95,7 @@ const useStudentTableControls = ({
               startContent={<UserPlus className="w-4 h-4" />}
               onPress={onBulkAssignClass}
               size="sm"
+              className="bg-blue-500/20 text-blue-300 border-blue-500/30 hover:bg-blue-500/30"
             >
               Assign Kelas
             </Button>
@@ -104,6 +105,7 @@ const useStudentTableControls = ({
               startContent={<Trash2 className="w-4 h-4" />}
               onPress={onBulkDelete}
               size="sm"
+              className="bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30"
             >
               Hapus Terpilih
             </Button>
@@ -111,6 +113,7 @@ const useStudentTableControls = ({
               variant="light"
               onPress={onClearSelection}
               size="sm"
+              className="text-white/60 hover:text-white hover:bg-white/10"
             >
               Batal Pilih
             </Button>
@@ -124,10 +127,14 @@ const useStudentTableControls = ({
             isClearable
             className="w-full sm:max-w-[44%]"
             placeholder="Cari berdasarkan nama atau NISN..."
-            startContent={<Search className="w-4 h-4" />}
+            startContent={<Search className="w-4 h-4 text-white/60" />}
             value={searchTerm}
             onClear={onClear}
             onValueChange={onSearchChange}
+            classNames={{
+              input: "text-white placeholder:text-white/60 bg-white/10",
+              inputWrapper: "bg-white/10 border-white/20 hover:border-white/30 focus-within:border-blue-500"
+            }}
           />
           <div className="flex gap-3">
             <Select
@@ -139,22 +146,36 @@ const useStudentTableControls = ({
                 const classId = Array.from(keys)[0] as string;
                 onClassChange(classId);
               }}
+              classNames={{
+                label: "text-white/80",
+                trigger: "bg-white/10 border-white/20 hover:border-white/30 text-white",
+                value: "text-white",
+                popoverContent: "bg-gray-800/90 border-white/20"
+              }}
             >
               {[{ id: '', name: 'Semua Kelas' }, ...classes].map((cls) => (
-                <SelectItem key={cls.id} textValue={cls.name}>
+                <SelectItem key={cls.id} textValue={cls.name} className="text-white hover:bg-white/10">
                   {cls.name}
                 </SelectItem>
               ))}
             </Select>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown className="w-4 h-4" />} variant="flat">
+                <Button 
+                  endContent={<ChevronDown className="w-4 h-4" />} 
+                  variant="flat"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                >
                   Status
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Status Filter"
+                className="text-white"
+                classNames={{
+                  base: "bg-gray-800/90 border-white/20"
+                }}
                 closeOnSelect={false}
                 selectedKeys={statusFilter}
                 selectionMode="multiple"
@@ -164,7 +185,7 @@ const useStudentTableControls = ({
                 }}
               >
                 {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
+                  <DropdownItem key={status.uid} className="capitalize text-white hover:bg-white/10">
                     {status.name}
                   </DropdownItem>
                 ))}
@@ -172,13 +193,21 @@ const useStudentTableControls = ({
             </Dropdown>
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button endContent={<ChevronDown className="w-4 h-4" />} variant="flat">
+                <Button 
+                  endContent={<ChevronDown className="w-4 h-4" />} 
+                  variant="flat"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                >
                   Kolom
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Table Columns"
+                className="text-white"
+                classNames={{
+                  base: "bg-gray-800/90 border-white/20"
+                }}
                 closeOnSelect={false}
                 selectedKeys={visibleColumns}
                 selectionMode="multiple"
@@ -188,7 +217,7 @@ const useStudentTableControls = ({
                 }}
               >
                 {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
+                  <DropdownItem key={column.uid} className="capitalize text-white hover:bg-white/10">
                     {column.name}
                   </DropdownItem>
                 ))}
@@ -198,18 +227,18 @@ const useStudentTableControls = ({
         </div>
       </div>
       <div className="flex justify-between items-center">
-        <span className="text-default-400 text-small">Total {filteredItemsLength} siswa</span>
-        <label className="flex items-center text-default-400 text-small">
+        <span className="text-white/70 text-small">Total {filteredItemsLength} siswa</span>
+        <label className="flex items-center text-white/70 text-small">
           Baris per halaman:
           <select
-            className="bg-transparent outline-none text-default-400 text-small ml-2"
+            className="bg-white/10 border border-white/20 rounded-md outline-none text-white text-small ml-2 px-2 py-1"
             onChange={onRowsPerPageChange}
             value={itemsPerPage}
           >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="15">15</option>
-            <option value="20">20</option>
+            <option value="5" className="bg-gray-800 text-white">5</option>
+            <option value="10" className="bg-gray-800 text-white">10</option>
+            <option value="15" className="bg-gray-800 text-white">15</option>
+            <option value="20" className="bg-gray-800 text-white">20</option>
           </select>
         </label>
       </div>
