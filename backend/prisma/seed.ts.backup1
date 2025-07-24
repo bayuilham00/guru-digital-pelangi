@@ -1,0 +1,108 @@
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log(`Start seeding ...`);
+
+  // --- Create a default School ---
+  const school = await prisma.school.upsert({
+    where: { id: 'clw5w4q1g00001234abcd' }, // Use a fixed CUID for consistency
+    update: {},
+    create: {
+      id: 'clw5w4q1g00001234abcd',
+      name: 'SMA Digital Pelangi',
+      address: 'Jl. Pendidikan No. 123, Jakarta',
+      phone: '021-12345678',
+      email: 'info@smadigitalpelangi.sch.id',
+    },
+  });
+  console.log(`Created school: ${school.name}`);
+
+  // --- Create an Admin User ---
+  const hashedPassword = await bcrypt.hash('admin123', 10);
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@pelangi.sch.id' },
+    update: {},
+    create: {
+      email: 'admin@pelangi.sch.id',
+      fullName: 'Admin Utama',
+      nip: 'ADMIN001',
+      password: hashedPassword,
+      role: 'ADMIN',
+      status: 'ACTIVE',
+    },
+  });
+  console.log(`Created admin user: ${admin.fullName}`);
+
+  // --- Create Subjects ---
+  const subjects = [
+    { name: 'Matematika', code: 'MTK', description: 'Mata pelajaran Matematika' },
+    { name: 'Bahasa Indonesia', code: 'BIN', description: 'Mata pelajaran Bahasa Indonesia' },
+    { name: 'IPA Terpadu', code: 'IPA', description: 'Ilmu Pengetahuan Alam (Fisika, Kimia, Biologi)' },
+    { name: 'IPS Terpadu', code: 'IPS', description: 'Ilmu Pengetahuan Sosial (Sejarah, Geografi, Ekonomi)' },
+    { name: 'Bahasa Inggris', code: 'ENG', description: 'Mata pelajaran Bahasa Inggris' },
+    { name: 'Pendidikan Jasmani', code: 'PJOK', description: 'Pendidikan Jasmani, Olahraga, dan Kesehatan' },
+  ];
+
+  await prisma.subject.createMany({
+    data: subjects,
+    skipDuplicates: true, // Skip if a subject with the same unique 'code' already exists
+  });
+  console.log(`Created ${subjects.length} subjects.`);
+
+  // --- Create Badges ---
+  const badges = [
+    { name: 'Rajin Belajar', description: 'Menyelesaikan 10 tugas tepat waktu.', icon: '📚', xpReward: 100, schoolId: school.id },
+    { name: 'Bintang Kelas', description: 'Mendapatkan nilai rata-rata di atas 90.', icon: '⭐', xpReward: 250, schoolId: school.id },
+    { name: 'Absen Sempurna', description: 'Hadir 100% dalam sebulan.', icon: '🎯', xpReward: 150, schoolId: school.id },
+    { name: 'Sang Juara', description: 'Peringkat 1 di kelas.', icon: '🏆', xpReward: 500, schoolId: school.id },
+    { name: 'Penolong Teman', description: 'Aktif membantu teman di forum diskusi.', icon: '🤝', xpReward: 75, schoolId: school.id },
+  ];
+
+  await prisma.badge.createMany({
+    data: badges,
+    skipDuplicates: true,
+  });
+  console.log(`Created ${badges.length} badges.`);
+
+  // --- Create Gamification Settings ---
+  const gamificationSettings = await prisma.gamificationSettings.upsert({
+    where: { name: 'Default Settings' },
+    update: {},
+    create: {
+      name: 'Default Settings',
+      description: 'Pengaturan gamifikasi standar untuk sekolah.',
+      xpPerGrade: 1,
+      xpAttendanceBonus: 10,
+      xpAbsentPenalty: 5,
+      levelThresholds: {
+        levels: [
+          { level: 1, name: 'Pemula', xp: 0 },
+          { level: 2, name: 'Berkembang', xp: 100 },
+          { level: 3, name: 'Mahir', xp: 300 },
+          { level: 4, name: 'Ahli', xp: 600 },
+          { level: 5, name: 'Master', xp: 1000 },
+          { level: 6, name: 'Grandmaster', xp: 1500 },
+          { level: 7, name: 'Legend', xp: 2000 },
+          { level: 8, name: 'Mythic', xp: 2500 },
+          { level: 9, name: 'Immortal', xp: 3000 },
+          { level: 10, name: 'Divine', xp: 4000 },
+        ]
+      },
+    },
+  });
+  console.log(`Created gamification settings: ${gamificationSettings.name}`);
+
+  console.log(`Seeding finished.`);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

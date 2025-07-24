@@ -1,0 +1,328 @@
+// Database Seed File
+// Populate database with sample data for testing
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🌱 Starting database seeding...');
+
+  // Create School
+  const school = await prisma.school.upsert({
+    where: { id: 'school-1' },
+    update: {},
+    create: {
+      id: 'school-1',
+      name: 'SMA Digital Pelangi',
+      address: 'Jl. Pendidikan No. 123, Jakarta Selatan',
+      phone: '021-12345678',
+      email: 'info@smadigitalpelangi.sch.id'
+    }
+  });
+
+  console.log('✅ School created:', school.name);
+
+  // Create Subjects
+  const subjects = await Promise.all([
+    prisma.subject.upsert({
+      where: { code: 'MTK' },
+      update: {},
+      create: {
+        name: 'Matematika',
+        code: 'MTK',
+        description: 'Mata pelajaran Matematika'
+      }
+    }),
+    prisma.subject.upsert({
+      where: { code: 'BIN' },
+      update: {},
+      create: {
+        name: 'Bahasa Indonesia',
+        code: 'BIN',
+        description: 'Mata pelajaran Bahasa Indonesia'
+      }
+    }),
+    prisma.subject.upsert({
+      where: { code: 'IPA' },
+      update: {},
+      create: {
+        name: 'IPA',
+        code: 'IPA',
+        description: 'Ilmu Pengetahuan Alam'
+      }
+    }),
+    prisma.subject.upsert({
+      where: { code: 'IPS' },
+      update: {},
+      create: {
+        name: 'IPS',
+        code: 'IPS',
+        description: 'Ilmu Pengetahuan Sosial'
+      }
+    }),
+    prisma.subject.upsert({
+      where: { code: 'ENG' },
+      update: {},
+      create: {
+        name: 'Bahasa Inggris',
+        code: 'ENG',
+        description: 'Mata pelajaran Bahasa Inggris'
+      }
+    })
+  ]);
+
+  console.log('✅ Subjects created:', subjects.length);
+
+  // Create Admin User
+  const hashedAdminPassword = await bcrypt.hash('admin123', 12);
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@smpn1br.sch.id' },
+    update: {},
+    create: {
+      email: 'admin@smpn1br.sch.id',
+      fullName: 'Surya Insomnia',
+      nip: '123456789012345678',
+      password: hashedAdminPassword,
+      role: 'ADMIN',
+      status: 'ACTIVE'
+    }
+  });
+
+  console.log('✅ Admin user created:', adminUser.email);
+
+  // Create Teacher Users
+  const hashedTeacherPassword = await bcrypt.hash('guru123', 12);
+  const teachers = await Promise.all([
+    prisma.user.upsert({
+      where: { email: 'guru1@smpn1br.sch.id' },
+      update: {},
+      create: {
+        email: 'guru1@smpn1br.sch.id',
+        fullName: 'Budi Sanjaya',
+        nip: '198501012010011001',
+        password: hashedTeacherPassword,
+        role: 'GURU',
+        status: 'ACTIVE'
+      }
+    }),
+    prisma.user.upsert({
+      where: { email: 'guru2@smpn1br.sch.id' },
+      update: {},
+      create: {
+        email: 'guru2@smpn1br.sch.id',
+        fullName: 'Siti Hasanah',
+        nip: '198702152011012002',
+        password: hashedTeacherPassword,
+        role: 'GURU',
+        status: 'ACTIVE'
+      }
+    })
+  ]);
+
+  console.log('✅ Teachers created:', teachers.length);
+
+  // Create Classes
+  const classes = await Promise.all([
+    prisma.class.upsert({
+      where: { id: 'class-10a' },
+      update: {},
+      create: {
+        id: 'class-10a',
+        name: '10A',
+        gradeLevel: '10',
+        schoolId: school.id,
+        teacherId: teachers[0].id,
+        academicYear: '2024/2025'
+      }
+    }),
+    prisma.class.upsert({
+      where: { id: 'class-10b' },
+      update: {},
+      create: {
+        id: 'class-10b',
+        name: '10B',
+        gradeLevel: '10',
+        schoolId: school.id,
+        teacherId: teachers[1].id,
+        academicYear: '2024/2025'
+      }
+    }),
+    prisma.class.upsert({
+      where: { id: 'class-11a' },
+      update: {},
+      create: {
+        id: 'class-11a',
+        name: '11A',
+        gradeLevel: '11',
+        schoolId: school.id,
+        teacherId: teachers[0].id,
+        academicYear: '2024/2025'
+      }
+    })
+  ]);
+
+  console.log('✅ Classes created:', classes.length);
+
+  // Create Students
+  const students = [];
+  const studentNames = [
+    { first: 'Ahmad', last: 'Wijaya', nisn: '1234567890' },
+    { first: 'Sari', last: 'Dewi', nisn: '1234567891' },
+    { first: 'Rudi', last: 'Hartono', nisn: '1234567892' },
+    { first: 'Maya', last: 'Sari', nisn: '1234567893' },
+    { first: 'Andi', last: 'Pratama', nisn: '1234567894' },
+    { first: 'Rina', last: 'Wati', nisn: '1234567895' },
+    { first: 'Dedi', last: 'Kurniawan', nisn: '1234567896' },
+    { first: 'Lina', last: 'Marlina', nisn: '1234567897' },
+    { first: 'Agus', last: 'Setiawan', nisn: '1234567898' },
+    { first: 'Fitri', last: 'Handayani', nisn: '1234567899' }
+  ];
+
+  for (let i = 0; i < studentNames.length; i++) {
+    const studentData = studentNames[i];
+    const classId = i < 4 ? classes[0].id : i < 7 ? classes[1].id : classes[2].id;
+    
+    const student = await prisma.student.upsert({
+      where: { studentId: studentData.nisn },
+      update: {},
+      create: {
+        studentId: studentData.nisn,
+        fullName: `${studentData.first} ${studentData.last}`,
+        email: `${studentData.first.toLowerCase()}@student.smadigitalpelangi.sch.id`,
+        classId: classId,
+        gender: i % 2 === 0 ? 'L' : 'P',
+        status: 'ACTIVE',
+        parentName: `Orang Tua ${studentData.first}`,
+        parentPhone: `08123456${String(i).padStart(3, '0')}`
+      }
+    });
+
+    // Create StudentXp record
+    await prisma.studentXp.upsert({
+      where: { studentId: student.id },
+      update: {},
+      create: {
+        studentId: student.id,
+        totalXp: Math.floor(Math.random() * 500),
+        level: Math.floor(Math.random() * 5) + 1,
+        levelName: ['Pemula', 'Pelajar', 'Cendekiawan', 'Ahli', 'Master'][Math.floor(Math.random() * 5)]
+      }
+    });
+
+    students.push(student);
+  }
+
+  console.log('✅ Students created:', students.length);
+
+  // Create Badges
+  const badges = await Promise.all([
+    prisma.badge.upsert({
+      where: { id: 'badge-attendance' },
+      update: {},
+      create: {
+        id: 'badge-attendance',
+        name: 'Perfect Attendance',
+        description: 'Hadir sempurna selama 1 bulan',
+        icon: '🎯',
+        criteria: 'Tidak absen selama 30 hari berturut-turut',
+        xpReward: 100
+      }
+    }),
+    prisma.badge.upsert({
+      where: { id: 'badge-quiz' },
+      update: {},
+      create: {
+        id: 'badge-quiz',
+        name: 'Quiz Master',
+        description: 'Menyelesaikan 10 quiz dengan nilai sempurna',
+        icon: '🧠',
+        criteria: 'Mendapat nilai 100 pada 10 quiz berbeda',
+        xpReward: 150
+      }
+    }),
+    prisma.badge.upsert({
+      where: { id: 'badge-helper' },
+      update: {},
+      create: {
+        id: 'badge-helper',
+        name: 'Helper',
+        description: 'Membantu teman sekelas',
+        icon: '🤝',
+        criteria: 'Membantu teman dalam pembelajaran',
+        xpReward: 50
+      }
+    })
+  ]);
+
+  console.log('✅ Badges created:', badges.length);
+
+  // Create sample attendance records
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  for (const student of students.slice(0, 5)) {
+    await prisma.attendance.upsert({
+      where: {
+        studentId_classId_date: {
+          studentId: student.id,
+          classId: student.classId,
+          date: yesterday
+        }
+      },
+      update: {},
+      create: {
+        studentId: student.id,
+        classId: student.classId,
+        date: yesterday,
+        status: ['PRESENT', 'PRESENT', 'LATE', 'PRESENT', 'ABSENT'][Math.floor(Math.random() * 5)],
+        timeIn: '07:30'
+      }
+    });
+  }
+
+  console.log('✅ Sample attendance records created');
+
+  // Create gamification settings
+  console.log('🎮 Creating gamification settings...');
+
+  const gamificationSettings = await prisma.gamificationSettings.create({
+    data: {
+      name: 'Default Gamification',
+      description: 'Pengaturan gamifikasi default untuk sistem',
+      xpPerGrade: 1, // 1 XP per point nilai
+      xpAttendanceBonus: 10, // 10 XP bonus untuk hadir
+      xpAbsentPenalty: 5, // 5 XP penalty untuk tidak hadir
+      levelThresholds: [
+        { level: 1, name: 'Pemula', xp: 0 },
+        { level: 2, name: 'Pelajar', xp: 100 },
+        { level: 3, name: 'Rajin', xp: 250 },
+        { level: 4, name: 'Berprestasi', xp: 500 },
+        { level: 5, name: 'Juara', xp: 1000 },
+        { level: 6, name: 'Master', xp: 2000 },
+        { level: 7, name: 'Legend', xp: 5000 }
+      ],
+      isActive: true
+    }
+  });
+
+  console.log('✅ Gamification settings created');
+
+  console.log('🎉 Database seeding completed successfully!');
+  console.log('');
+  console.log('📋 Sample Login Credentials:');
+  console.log('👨‍💼 Admin: admin@smadigitalpelangi.sch.id / admin123');
+  console.log('👨‍🏫 Guru 1: guru1@smadigitalpelangi.sch.id / guru123');
+  console.log('👨‍🏫 Guru 2: guru2@smadigitalpelangi.sch.id / guru123');
+  console.log('👨‍🎓 Siswa: 1234567890 / 1234567890 (NISN sebagai password)');
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Error during seeding:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

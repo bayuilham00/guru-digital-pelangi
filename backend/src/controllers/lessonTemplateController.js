@@ -1,0 +1,430 @@
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+const lessonTemplateController = {
+  // Get all lesson templates with filters
+  async getTemplates(req, res) {
+    try {
+      const {
+        page = 1,
+        limit = 20,
+        search,
+        subjectId,
+        isPublic,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = req.query;
+
+      const where = {};
+      
+      // Apply filters
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } }
+        ];
+      }
+      
+      if (subjectId) {
+        where.subjectId = subjectId;
+      }
+      
+      if (isPublic !== undefined) {
+        where.isPublic = isPublic === 'true';
+      }
+
+      // If not admin, only show public templates or user's own templates
+      if (req.user.role !== 'ADMIN') {
+        where.OR = [
+          { isPublic: true },
+          { createdBy: req.user.id }
+        ];
+      }
+
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const take = parseInt(limit);
+
+      const [templates, total] = await Promise.all([
+        prisma.lessonTemplate.findMany({
+          where,
+          skip,
+          take,
+          orderBy: { [sortBy]: sortOrder },
+          include: {
+            subject: {
+              select: { id: true, name: true, code: true }
+            },
+            createdByUser: {
+              select: { id: true, fullName: true }
+            }
+          }
+        }),
+        prisma.lessonTemplate.count({ where })
+      ]);
+
+      const totalPages = Math.ceil(total / take);
+
+      res.json({
+        success: true,
+        data: templates,
+        pagination: {
+          page: parseInt(page),
+          limit: take,
+          total,
+          totalPages
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Gagal memuat template',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Get single template
+  async getTemplate(req, res) {
+    try {
+      const { id } = req.params;
+
+      const template = await prisma.lessonTemplate.findUnique({
+        where: { id },
+        include: {
+          subject: {
+            select: { id: true, name: true, code: true }
+          },
+          createdByUser: {
+            select: { id: true, fullName: true }
+          }
+        }
+      });
+
+      if (!template) {
+        return res.status(404).json({
+          success: false,
+          message: 'Template tidak ditemukan'
+        });
+      }
+
+      // Check access permission
+      if (!template.isPublic && template.createdBy !== req.user.id && req.user.role !== 'ADMIN') {
+        return res.status(403).json({
+          success: false,
+          message: 'Anda tidak memiliki akses ke template ini'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: template
+      });
+    } catch (error) {
+      console.error('Error fetching template:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Gagal memuat template',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Create new template
+  async createTemplate(req, res) {
+    try {
+      const {
+        name,
+        description,
+        subjectId,
+        templateStructure,
+        learningObjectives,
+        estimatedDuration,
+        difficultyLevel,
+        gradeLevel,
+        isPublic = false
+      } = req.body;
+
+      if (!name) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nama template harus diisi'
+        });
+      }
+
+      if (!subjectId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mata pelajaran harus dipilih'
+        });
+      }
+
+      const template = await prisma.lessonTemplate.create({
+        data: {
+          name,
+          description,
+          subjectId,
+          templateStructure: templateStructure || {},
+          learningObjectives: learningObjectives || [],
+          estimatedDuration: estimatedDuration || 90,
+          difficultyLevel,
+          gradeLevel,
+          isPublic,
+          createdBy: req.user.id
+        },
+        include: {
+          subject: {
+            select: { id: true, name: true, code: true }
+          },
+          createdByUser: {
+            select: { id: true, fullName: true }
+          }
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        data: template,
+        message: 'Template berhasil dibuat'
+      });
+    } catch (error) {
+      console.error('Error creating template:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Gagal membuat template',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Update template
+  async updateTemplate(req, res) {
+    try {
+      const { id } = req.params;
+      const {
+        name,
+        description,
+        subjectId,
+        templateStructure,
+        learningObjectives,
+        estimatedDuration,
+        difficultyLevel,
+        gradeLevel,
+        isPublic
+      } = req.body;
+
+      // Check if template exists and user has permission
+      const existingTemplate = await prisma.lessonTemplate.findUnique({
+        where: { id }
+      });
+
+      if (!existingTemplate) {
+        return res.status(404).json({
+          success: false,
+          message: 'Template tidak ditemukan'
+        });
+      }
+
+      if (existingTemplate.createdBy !== req.user.id && req.user.role !== 'ADMIN') {
+        return res.status(403).json({
+          success: false,
+          message: 'Anda tidak memiliki izin untuk mengubah template ini'
+        });
+      }
+
+      const template = await prisma.lessonTemplate.update({
+        where: { id },
+        data: {
+          name,
+          description,
+          subjectId,
+          templateStructure,
+          learningObjectives,
+          estimatedDuration,
+          difficultyLevel,
+          gradeLevel,
+          isPublic
+        },
+        include: {
+          subject: {
+            select: { id: true, name: true, code: true }
+          },
+          createdByUser: {
+            select: { id: true, fullName: true }
+          }
+        }
+      });
+
+      res.json({
+        success: true,
+        data: template,
+        message: 'Template berhasil diperbarui'
+      });
+    } catch (error) {
+      console.error('Error updating template:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Gagal memperbarui template',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Delete template
+  async deleteTemplate(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Check if template exists and user has permission
+      const existingTemplate = await prisma.lessonTemplate.findUnique({
+        where: { id }
+      });
+
+      if (!existingTemplate) {
+        return res.status(404).json({
+          success: false,
+          message: 'Template tidak ditemukan'
+        });
+      }
+
+      if (existingTemplate.createdBy !== req.user.id && req.user.role !== 'ADMIN') {
+        return res.status(403).json({
+          success: false,
+          message: 'Anda tidak memiliki izin untuk menghapus template ini'
+        });
+      }
+
+      await prisma.lessonTemplate.delete({
+        where: { id }
+      });
+
+      res.json({
+        success: true,
+        message: 'Template berhasil dihapus'
+      });
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Gagal menghapus template',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Duplicate template
+  async duplicateTemplate(req, res) {
+    try {
+      const { id } = req.params;
+
+      const originalTemplate = await prisma.lessonTemplate.findUnique({
+        where: { id }
+      });
+
+      if (!originalTemplate) {
+        return res.status(404).json({
+          success: false,
+          message: 'Template tidak ditemukan'
+        });
+      }
+
+      // Check access permission
+      if (!originalTemplate.isPublic && originalTemplate.createdBy !== req.user.id && req.user.role !== 'ADMIN') {
+        return res.status(403).json({
+          success: false,
+          message: 'Anda tidak memiliki akses untuk menduplikasi template ini'
+        });
+      }
+
+      const duplicatedTemplate = await prisma.lessonTemplate.create({
+        data: {
+          name: `${originalTemplate.name} (Copy)`,
+          description: originalTemplate.description,
+          subjectId: originalTemplate.subjectId,
+          templateStructure: originalTemplate.templateStructure,
+          learningObjectives: originalTemplate.learningObjectives,
+          estimatedDuration: originalTemplate.estimatedDuration,
+          difficultyLevel: originalTemplate.difficultyLevel,
+          gradeLevel: originalTemplate.gradeLevel,
+          isPublic: false, // Duplicated templates are private by default
+          createdBy: req.user.id
+        },
+        include: {
+          subject: {
+            select: { id: true, name: true, code: true }
+          },
+          createdByUser: {
+            select: { id: true, fullName: true }
+          }
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        data: duplicatedTemplate,
+        message: 'Template berhasil diduplikasi'
+      });
+    } catch (error) {
+      console.error('Error duplicating template:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Gagal menduplikasi template',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Bulk delete templates
+  async bulkDeleteTemplates(req, res) {
+    try {
+      const { ids } = req.body;
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'IDs template harus berupa array dan tidak boleh kosong'
+        });
+      }
+
+      // Check permissions for each template
+      const templates = await prisma.lessonTemplate.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, createdBy: true }
+      });
+
+      const unauthorizedTemplates = templates.filter(
+        template => template.createdBy !== req.user.id && req.user.role !== 'ADMIN'
+      );
+
+      if (unauthorizedTemplates.length > 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'Anda tidak memiliki izin untuk menghapus beberapa template yang dipilih'
+        });
+      }
+
+      const deletedTemplates = await prisma.lessonTemplate.deleteMany({
+        where: {
+          id: { in: ids },
+          ...(req.user.role !== 'ADMIN' && { createdBy: req.user.id })
+        }
+      });
+
+      res.json({
+        success: true,
+        data: { deletedCount: deletedTemplates.count },
+        message: `${deletedTemplates.count} template berhasil dihapus`
+      });
+    } catch (error) {
+      console.error('Error bulk deleting templates:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Gagal menghapus template',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+};
+
+export default lessonTemplateController;

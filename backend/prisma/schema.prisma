@@ -1,0 +1,764 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model School {
+  id         String      @id @default(cuid())
+  name       String
+  address    String?     @db.Text
+  phone      String?
+  email      String?
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  badges     Badge[]
+  challenges Challenge[]
+  classes    Class[]
+
+  @@map("schools")
+}
+
+model Config {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  value         String   @db.Text
+  description   String?  @db.Text
+  category      String   @default("system")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("configs")
+}
+
+model Subject {
+  id                   String                     @id @default(cuid())
+  name                 String
+  code                 String                     @unique
+  description          String?                    @db.Text
+  createdAt            DateTime                   @default(now()) @map("created_at")
+  updatedAt            DateTime                   @updatedAt @map("updated_at")
+  assignments          Assignment[]
+  attendances          Attendance[]
+  classSubjects        ClassSubject[]
+  classTeacherSubjects ClassTeacherSubject[]
+  classes              Class[]
+  grades               Grade[]
+  learningPlans        LearningPlan[]
+  lessonTemplates      LessonTemplate[]
+  questionBanks        QuestionBank[]
+  questionCategories   QuestionCategory[]
+  questions            Question[]
+  studentEnrollments   StudentSubjectEnrollment[]
+  teacherPlans         TeacherPlan[]
+  topics               Topic[]
+
+  @@map("subjects")
+}
+
+model ClassSubject {
+  id        String   @id @default(cuid())
+  classId   String   @map("class_id")
+  subjectId String   @map("subject_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, subjectId])
+  @@index([subjectId], map: "class_subjects_subject_id_fkey")
+  @@map("class_subjects")
+}
+
+model ClassTeacherSubject {
+  id        String   @id @default(cuid())
+  classId   String   @map("class_id")
+  teacherId String   @map("teacher_id")
+  subjectId String   @map("subject_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, teacherId, subjectId])
+  @@index([subjectId], map: "class_teacher_subjects_subject_id_fkey")
+  @@index([teacherId], map: "class_teacher_subjects_teacher_id_fkey")
+  @@map("class_teacher_subjects")
+}
+
+model StudentSubjectEnrollment {
+  id         String   @id @default(cuid())
+  studentId  String   @map("student_id")
+  classId    String   @map("class_id")
+  subjectId  String   @map("subject_id")
+  isActive   Boolean  @default(true) @map("is_active")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, classId, subjectId])
+  @@index([classId], map: "student_subject_enrollments_class_id_fkey")
+  @@index([subjectId], map: "student_subject_enrollments_subject_id_fkey")
+  @@map("student_subject_enrollments")
+}
+
+model Class {
+  id                   String                     @id @default(cuid())
+  name                 String
+  subjectId            String?                    @map("subject_id")
+  description          String?                    @db.Text
+  gradeLevel           String?                    @map("grade_level")
+  schoolId             String?                    @map("school_id")
+  academicYear         String                     @default("2024/2025") @map("academic_year")
+  studentCount         Int                        @default(0) @map("student_count")
+  createdAt            DateTime                   @default(now()) @map("created_at")
+  updatedAt            DateTime                   @updatedAt @map("updated_at")
+  isPhysicalClass      Boolean                    @default(true) @map("is_physical_class")
+  assignments          Assignment[]
+  attendances          Attendance[]
+  classSubjects        ClassSubject[]
+  classTeacherSubjects ClassTeacherSubject[]
+  classTeachers        ClassTeacher[]
+  school               School?                    @relation(fields: [schoolId], references: [id])
+  subject              Subject?                   @relation(fields: [subjectId], references: [id])
+  grades               Grade[]
+  learningPlans        LearningPlan[]
+  studentEnrollments   StudentSubjectEnrollment[]
+  students             Student[]
+  teacherPlans         TeacherPlan[]
+
+  @@index([schoolId], map: "classes_school_id_fkey")
+  @@index([subjectId], map: "classes_subject_id_fkey")
+  @@map("classes")
+}
+
+model ClassTeacher {
+  id        String   @id @default(cuid())
+  classId   String   @map("class_id")
+  teacherId String   @map("teacher_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, teacherId])
+  @@index([teacherId], map: "class_teachers_teacher_id_fkey")
+  @@map("class_teachers")
+}
+
+model User {
+  id                   String                 @id @default(cuid())
+  email                String                 @unique
+  fullName             String                 @map("full_name")
+  nip                  String?                @unique
+  role                 Role                   @default(GURU)
+  password             String
+  status               Status                 @default(ACTIVE)
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+  activities           Activity[]
+  gradedSubmissions    AssignmentSubmission[] @relation("GradedSubmissions")
+  assignments          Assignment[]
+  challenges           Challenge[]
+  classTeacherSubjects ClassTeacherSubject[]
+  classTeachers        ClassTeacher[]
+  grades               Grade[]
+  learningPlans        LearningPlan[]
+  lessonTemplates      LessonTemplate[]
+  questionBanks        QuestionBank[]
+  questions            Question[]
+  awardedBadges        StudentBadge[]
+  teacherPlans         TeacherPlan[]
+
+  @@map("users")
+}
+
+model Student {
+  id                      String                     @id @default(cuid())
+  studentId               String                     @unique @map("student_id")
+  fullName                String                     @map("full_name")
+  email                   String?
+  classId                 String?                    @map("class_id")
+  dateOfBirth             DateTime?                  @map("date_of_birth") @db.Date
+  gender                  Gender?
+  address                 String?                    @db.Text
+  phone                   String?
+  parentName              String?                    @map("parent_name")
+  parentPhone             String?                    @map("parent_phone")
+  asalSekolah             String?                    @map("asal_sekolah")
+  kecamatan               String?
+  desaKelurahan           String?                    @map("desa_kelurahan")
+  status                  Status                     @default(ACTIVE)
+  createdAt               DateTime                   @default(now()) @map("created_at")
+  updatedAt               DateTime                   @updatedAt @map("updated_at")
+  profilePhoto            String?                    @map("profile_photo") @db.LongText
+  submissions             AssignmentSubmission[]
+  attendances             Attendance[]
+  challengeParticipations ChallengeParticipation[]
+  grades                  Grade[]
+  achievements            StudentAchievement[]
+  studentAnswers          StudentAnswer[]
+  studentBadges           StudentBadge[]
+  subjectEnrollments      StudentSubjectEnrollment[]
+  studentXp               StudentXp?
+  class                   Class?                     @relation(fields: [classId], references: [id])
+
+  @@index([classId], map: "students_class_id_fkey")
+  @@map("students")
+}
+
+model Grade {
+  id            String    @id @default(cuid())
+  studentId     String    @map("student_id")
+  subjectId     String    @map("subject_id")
+  classId       String    @map("class_id")
+  gradeType     GradeType @map("grade_type")
+  score         Float
+  maxScore      Float     @map("max_score")
+  description   String?   @db.Text
+  date          DateTime  @db.Date
+  createdBy     String    @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  class         Class     @relation(fields: [classId], references: [id])
+  createdByUser User      @relation(fields: [createdBy], references: [id])
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject       Subject   @relation(fields: [subjectId], references: [id])
+
+  @@index([classId], map: "grades_class_id_fkey")
+  @@index([createdBy], map: "grades_created_by_fkey")
+  @@index([studentId], map: "grades_student_id_fkey")
+  @@index([subjectId], map: "grades_subject_id_fkey")
+  @@map("grades")
+}
+
+model Assignment {
+  id           String                 @id @default(cuid())
+  title        String
+  description  String?                @db.Text
+  instructions String?                @db.Text
+  points       Int                    @default(100)
+  deadline     DateTime
+  status       AssignmentStatus       @default(ACTIVE)
+  type         AssignmentType         @default(TUGAS_HARIAN)
+  classId      String                 @map("class_id")
+  teacherId    String                 @map("teacher_id")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+  subjectId    String?                @map("subject_id")
+  questions    AssignmentQuestion[]
+  submissions  AssignmentSubmission[]
+  class        Class                  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject      Subject?               @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher      User                   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  answers      StudentAnswer[]
+
+  @@index([classId], map: "assignments_class_id_fkey")
+  @@index([subjectId], map: "assignments_subject_id_fkey")
+  @@index([teacherId], map: "assignments_teacher_id_fkey")
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id           String           @id @default(cuid())
+  assignmentId String           @map("assignment_id")
+  studentId    String           @map("student_id")
+  content      String?          @db.Text
+  attachments  Json?
+  score        Float?
+  feedback     String?          @db.Text
+  status       SubmissionStatus @default(NOT_SUBMITTED)
+  submittedAt  DateTime?        @map("submitted_at")
+  gradedAt     DateTime?        @map("graded_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  gradedBy     String?          @map("graded_by")
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  grader       User?            @relation("GradedSubmissions", fields: [gradedBy], references: [id])
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@index([gradedBy], map: "assignment_submissions_graded_by_fkey")
+  @@index([studentId], map: "assignment_submissions_student_id_fkey")
+  @@map("assignment_submissions")
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  studentId String           @map("student_id")
+  classId   String           @map("class_id")
+  date      DateTime         @db.Date
+  status    AttendanceStatus
+  reason    AbsentReason?
+  timeIn    String?          @map("time_in")
+  notes     String?          @db.Text
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  subjectId String?          @map("subject_id")
+  class     Class            @relation(fields: [classId], references: [id])
+  student   Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject   Subject?         @relation(fields: [subjectId], references: [id])
+
+  @@unique([studentId, classId, date, subjectId])
+  @@index([classId], map: "attendances_class_id_fkey")
+  @@index([subjectId], map: "attendances_subject_id_fkey")
+  @@map("attendances")
+}
+
+model StudentXp {
+  id               String    @id @default(cuid())
+  studentId        String    @unique @map("student_id")
+  totalXp          Int       @default(0) @map("total_xp")
+  level            Int       @default(1)
+  levelName        String    @default("Pemula") @map("level_name")
+  attendanceStreak Int       @default(0) @map("attendance_streak")
+  assignmentStreak Int       @default(0) @map("assignment_streak")
+  lastAttendance   DateTime? @map("last_attendance") @db.Date
+  lastAssignment   DateTime? @map("last_assignment") @db.Date
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  student          Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("student_xp")
+}
+
+model Badge {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?        @db.Text
+  icon          String?
+  criteria      String?        @db.Text
+  xpReward      Int            @default(0) @map("xp_reward")
+  schoolId      String?        @map("school_id")
+  isActive      Boolean        @default(true) @map("is_active")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  school        School?        @relation(fields: [schoolId], references: [id])
+  studentBadges StudentBadge[]
+
+  @@index([schoolId], map: "badges_school_id_fkey")
+  @@map("badges")
+}
+
+model StudentBadge {
+  id            String   @id @default(cuid())
+  studentId     String   @map("student_id")
+  badgeId       String   @map("badge_id")
+  awardedBy     String?  @map("awarded_by")
+  reason        String?  @db.Text
+  earnedAt      DateTime @default(now()) @map("earned_at")
+  awardedByUser User?    @relation(fields: [awardedBy], references: [id])
+  badge         Badge    @relation(fields: [badgeId], references: [id])
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, badgeId])
+  @@index([awardedBy], map: "student_badges_awarded_by_fkey")
+  @@index([badgeId], map: "student_badges_badge_id_fkey")
+  @@map("student_badges")
+}
+
+model GamificationSettings {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  description       String?  @db.Text
+  xpPerGrade        Int      @default(1) @map("xp_per_grade")
+  xpAttendanceBonus Int      @default(10) @map("xp_attendance_bonus")
+  xpAbsentPenalty   Int      @default(5) @map("xp_absent_penalty")
+  levelThresholds   Json     @map("level_thresholds")
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("gamification_settings")
+}
+
+model StudentAchievement {
+  id          String   @id @default(cuid())
+  studentId   String   @map("student_id")
+  type        String
+  title       String
+  description String?  @db.Text
+  xpReward    Int      @default(0) @map("xp_reward")
+  earnedAt    DateTime @default(now()) @map("earned_at")
+  metadata    Json?
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId], map: "student_achievements_student_id_fkey")
+  @@map("student_achievements")
+}
+
+model Challenge {
+  id             String                   @id @default(cuid())
+  title          String
+  description    String                   @db.Text
+  duration       Int
+  targetType     String
+  targetData     Json?
+  xpReward       Int                      @default(0) @map("xp_reward")
+  schoolId       String?                  @map("school_id")
+  isActive       Boolean                  @default(true) @map("is_active")
+  startDate      DateTime                 @default(now()) @map("start_date")
+  endDate        DateTime                 @default(now()) @map("end_date")
+  createdBy      String                   @map("created_by")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
+  participations ChallengeParticipation[]
+  createdByUser  User                     @relation(fields: [createdBy], references: [id])
+  school         School?                  @relation(fields: [schoolId], references: [id])
+
+  @@index([createdBy], map: "challenges_created_by_fkey")
+  @@index([schoolId], map: "challenges_school_id_fkey")
+  @@map("challenges")
+}
+
+model ChallengeParticipation {
+  id          String    @id @default(cuid())
+  challengeId String    @map("challenge_id")
+  studentId   String    @map("student_id")
+  status      String    @default("ACTIVE")
+  progress    Int       @default(0)
+  completedAt DateTime? @map("completed_at")
+  xpEarned    Int       @default(0) @map("xp_earned")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, studentId])
+  @@index([studentId], map: "challenge_participations_student_id_fkey")
+  @@map("challenge_participations")
+}
+
+model LearningPlan {
+  id            String   @id @default(cuid())
+  title         String
+  classId       String   @map("class_id")
+  subjectId     String   @map("subject_id")
+  objectives    Json?
+  materials     Json?
+  methods       Json?
+  activities    Json?
+  assessments   Json?
+  duration      Int?
+  date          DateTime @db.Date
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  class         Class    @relation(fields: [classId], references: [id])
+  createdByUser User     @relation(fields: [createdBy], references: [id])
+  subject       Subject  @relation(fields: [subjectId], references: [id])
+
+  @@index([classId], map: "learning_plans_class_id_fkey")
+  @@index([createdBy], map: "learning_plans_created_by_fkey")
+  @@index([subjectId], map: "learning_plans_subject_id_fkey")
+  @@map("learning_plans")
+}
+
+model QuestionCategory {
+  id          String     @id @default(cuid())
+  name        String
+  description String?    @db.Text
+  subjectId   String     @map("subject_id")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  subject     Subject    @relation(fields: [subjectId], references: [id])
+  questions   Question[]
+
+  @@index([subjectId], map: "question_categories_subject_id_fkey")
+  @@map("question_categories")
+}
+
+model Question {
+  id                  String               @id @default(cuid())
+  questionText        String               @map("question_text") @db.Text
+  questionType        QuestionType         @map("question_type")
+  difficulty          Difficulty
+  subjectId           String               @map("subject_id")
+  categoryId          String?              @map("category_id")
+  correctAnswer       String               @map("correct_answer") @db.Text
+  explanation         String?              @db.Text
+  tags                Json?
+  createdBy           String               @map("created_by")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  gradeLevel          String               @map("grade_level") @db.VarChar(10)
+  isPublic            Boolean              @default(false) @map("is_public")
+  points              Int                  @default(1)
+  timeLimit           Int?                 @map("time_limit")
+  topicId             String?              @map("topic_id")
+  assignmentQuestions AssignmentQuestion[]
+  questionBanks       QuestionBankItem[]
+  options             QuestionOption[]
+  category            QuestionCategory?    @relation(fields: [categoryId], references: [id])
+  createdByUser       User                 @relation(fields: [createdBy], references: [id])
+  subject             Subject              @relation(fields: [subjectId], references: [id])
+  topic               Topic?               @relation(fields: [topicId], references: [id])
+  studentAnswers      StudentAnswer[]
+
+  @@index([categoryId], map: "questions_category_id_fkey")
+  @@index([createdBy], map: "questions_created_by_fkey")
+  @@index([subjectId], map: "questions_subject_id_fkey")
+  @@index([topicId], map: "questions_topic_id_fkey")
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String   @map("question_id")
+  optionText String   @map("option_text") @db.Text
+  isCorrect  Boolean  @default(false) @map("is_correct")
+  orderIndex Int?     @map("order_index")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId], map: "question_options_question_id_fkey")
+  @@map("question_options")
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  title       String
+  description String?      @db.Text
+  userId      String?      @map("user_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  user        User?        @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "activities_user_id_fkey")
+  @@map("activities")
+}
+
+model LessonTemplate {
+  id                 String        @id @default(cuid())
+  name               String
+  description        String?       @db.Text
+  subjectId          String?       @map("subject_id")
+  templateStructure  Json          @map("template_structure")
+  learningObjectives Json          @map("learning_objectives")
+  estimatedDuration  Int?          @map("estimated_duration")
+  difficultyLevel    String?       @map("difficulty_level")
+  gradeLevel         String?       @map("grade_level")
+  createdBy          String        @map("created_by")
+  isPublic           Boolean       @default(false) @map("is_public")
+  usageCount         Int           @default(0) @map("usage_count")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  createdByUser      User          @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  subject            Subject?      @relation(fields: [subjectId], references: [id])
+  teacherPlans       TeacherPlan[]
+
+  @@index([createdBy], map: "lesson_templates_created_by_fkey")
+  @@index([subjectId], map: "lesson_templates_subject_id_fkey")
+  @@map("lesson_templates")
+}
+
+model TeacherPlan {
+  id                 String          @id @default(cuid())
+  title              String
+  description        String?         @db.Text
+  classId            String          @map("class_id")
+  subjectId          String          @map("subject_id")
+  templateId         String?         @map("template_id")
+  teacherId          String          @map("teacher_id")
+  scheduledDate      DateTime        @map("scheduled_date")
+  duration           Int?
+  learningObjectives Json?           @map("learning_objectives")
+  lessonContent      Json?           @map("lesson_content")
+  assessment         Json?
+  resources          Json?
+  notes              String?         @db.Text
+  status             String          @default("DRAFT")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  class              Class           @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject            Subject         @relation(fields: [subjectId], references: [id])
+  teacher            User            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  template           LessonTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([classId], map: "teacher_plans_class_id_fkey")
+  @@index([subjectId], map: "teacher_plans_subject_id_fkey")
+  @@index([teacherId], map: "teacher_plans_teacher_id_fkey")
+  @@index([templateId], map: "teacher_plans_template_id_fkey")
+  @@map("teacher_plans")
+}
+
+model Topic {
+  id          String     @id @default(cuid())
+  name        String
+  description String?    @db.Text
+  subjectId   String     @map("subject_id")
+  gradeLevel  String     @map("grade_level") @db.VarChar(10)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  questions   Question[]
+  subject     Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId], map: "topics_subject_id_fkey")
+  @@map("topics")
+}
+
+model QuestionBank {
+  id          String             @id @default(cuid())
+  name        String
+  description String?            @db.Text
+  subjectId   String             @map("subject_id")
+  gradeLevel  String             @map("grade_level") @db.VarChar(10)
+  isPublic    Boolean            @default(false) @map("is_public")
+  createdBy   String             @map("created_by")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  questions   QuestionBankItem[]
+  creator     User               @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  subject     Subject            @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([createdBy], map: "question_banks_created_by_fkey")
+  @@index([subjectId], map: "question_banks_subject_id_fkey")
+  @@map("question_banks")
+}
+
+model QuestionBankItem {
+  id             String       @id @default(cuid())
+  questionBankId String       @map("question_bank_id")
+  questionId     String       @map("question_id")
+  orderIndex     Int          @default(0) @map("order_index")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  questionBank   QuestionBank @relation(fields: [questionBankId], references: [id], onDelete: Cascade)
+  question       Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionBankId, questionId])
+  @@index([questionId], map: "question_bank_items_question_id_fkey")
+  @@map("question_bank_items")
+}
+
+model StudentAnswer {
+  id           String      @id @default(cuid())
+  questionId   String      @map("question_id")
+  studentId    String      @map("student_id")
+  assignmentId String?     @map("assignment_id")
+  answerText   String?     @map("answer_text") @db.Text
+  isCorrect    Boolean?    @map("is_correct")
+  score        Int?
+  timeTaken    Int?        @map("time_taken")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  assignment   Assignment? @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  question     Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  student      Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId], map: "student_answers_assignment_id_fkey")
+  @@index([questionId], map: "student_answers_question_id_fkey")
+  @@index([studentId], map: "student_answers_student_id_fkey")
+  @@map("student_answers")
+}
+
+model AssignmentQuestion {
+  id             String     @id @default(cuid())
+  assignmentId   String     @map("assignment_id")
+  questionId     String     @map("question_id")
+  orderIndex     Int        @default(0) @map("order_index")
+  pointsOverride Int?       @map("points_override")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  assignment     Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  question       Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, questionId])
+  @@index([questionId], map: "assignment_questions_question_id_fkey")
+  @@map("assignment_questions")
+}
+
+enum Role {
+  ADMIN
+  GURU
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+}
+
+enum Gender {
+  L
+  P
+}
+
+enum GradeType {
+  TUGAS_HARIAN
+  QUIZ
+  ULANGAN_HARIAN
+  PTS
+  PAS
+  PRAKTIK
+  SIKAP
+  KETERAMPILAN
+}
+
+enum AssignmentStatus {
+  DRAFT
+  ACTIVE
+  PUBLISHED
+  CLOSED
+}
+
+enum AssignmentType {
+  TUGAS_HARIAN
+  QUIZ
+  ULANGAN_HARIAN
+  PTS
+  PAS
+  PRAKTIK
+  PROYEK
+}
+
+enum SubmissionStatus {
+  NOT_SUBMITTED
+  SUBMITTED
+  LATE_SUBMITTED
+  GRADED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum AbsentReason {
+  ALPA
+  IZIN
+  SAKIT
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  MULTIPLE_CHOICE_COMPLEX
+  TRUE_FALSE
+  FILL_BLANK
+  FILL_IN_BLANK
+  ESSAY
+  MATCHING
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ActivityType {
+  GRADE
+  XP
+  BADGE
+  QUESTION
+  EXERCISE
+}

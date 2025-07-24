@@ -1,0 +1,188 @@
+// New Schema Design for Multi-Subject Class Management
+// Strategy: Soft Migration with Backward Compatibility
+
+// ====================
+// NEW MODELS TO ADD
+// ====================
+
+// 1. Junction table: Class can have multiple subjects
+model ClassSubject {
+  id        String   @id @default(cuid())
+  classId   String   @map("class_id")
+  subjectId String   @map("subject_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  // One subject per class (but class can have multiple subjects)
+  @@unique([classId, subjectId])
+  @@map("class_subjects")
+}
+
+// 2. Teacher assignment to specific class-subject combinations
+model ClassTeacherSubject {
+  id        String   @id @default(cuid())
+  classId   String   @map("class_id")
+  teacherId String   @map("teacher_id")
+  subjectId String   @map("subject_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  // One teacher per class-subject combination
+  @@unique([classId, teacherId, subjectId])
+  @@map("class_teacher_subjects")
+}
+
+// 3. Track student enrollment in specific class-subject combinations
+model StudentSubjectEnrollment {
+  id        String   @id @default(cuid())
+  studentId String   @map("student_id")
+  classId   String   @map("class_id")
+  subjectId String   @map("subject_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  // One enrollment per student-class-subject combination
+  @@unique([studentId, classId, subjectId])
+  @@map("student_subject_enrollments")
+}
+
+// ====================
+// MODIFIED EXISTING MODELS
+// ====================
+
+model Class {
+  id           String   @id @default(cuid())
+  name         String
+  subjectId    String?  @map("subject_id") // DEPRECATED - Keep for backward compatibility
+  description  String?  @db.Text
+  gradeLevel   String?  @map("grade_level")
+  schoolId     String?  @map("school_id")
+  academicYear String   @default("2024/2025") @map("academic_year")
+  studentCount Int      @default(0) @map("student_count")
+  isPhysicalClass Boolean @default(true) @map("is_physical_class") // NEW: Distinguish physical vs subject-specific classes
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  school        School?        @relation(fields: [schoolId], references: [id])
+  subject       Subject?       @relation(fields: [subjectId], references: [id]) // DEPRECATED
+  students      Student[]
+  grades        Grade[]
+  learningPlans LearningPlan[]
+  attendances   Attendance[]
+  assignments   Assignment[]
+  classTeachers ClassTeacher[] // DEPRECATED - Use ClassTeacherSubject instead
+  teacherPlans  TeacherPlan[]
+  
+  // NEW RELATIONS
+  classSubjects         ClassSubject[]              // Class can have multiple subjects
+  classTeacherSubjects  ClassTeacherSubject[]       // Teachers assigned to class-subject combinations
+  studentEnrollments    StudentSubjectEnrollment[]  // Student enrollments in class-subject combinations
+
+  @@map("classes")
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  classes           Class[]                     // DEPRECATED
+  grades            Grade[]
+  learningPlans     LearningPlan[]
+  questions         Question[]
+  questionCategories QuestionCategory[]
+  lessonTemplates   LessonTemplate[]
+  teacherPlans      TeacherPlan[]
+  
+  // NEW RELATIONS
+  classSubjects         ClassSubject[]              // Subject can be taught in multiple classes
+  classTeacherSubjects  ClassTeacherSubject[]       // Teachers assigned to teach this subject
+  studentEnrollments    StudentSubjectEnrollment[]  // Students enrolled in this subject
+
+  @@map("subjects")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  fullName  String   @map("full_name")
+  nip       String?  @unique
+  role      Role     @default(GURU)
+  password  String
+  status    Status   @default(ACTIVE)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  grades        Grade[]
+  learningPlans LearningPlan[]
+  questions     Question[]
+  activities    Activity[]
+  assignments   Assignment[]
+  challenges    Challenge[]
+  classTeachers ClassTeacher[]        // DEPRECATED
+  awardedBadges StudentBadge[]
+  lessonTemplates LessonTemplate[]
+  
+  // NEW RELATIONS
+  classTeacherSubjects ClassTeacherSubject[] // Teacher assignments to class-subject combinations
+
+  @@map("users")
+}
+
+model Student {
+  id           String    @id @default(cuid())
+  studentId    String    @unique @map("student_id")
+  fullName     String    @map("full_name")
+  email        String?
+  classId      String?   @map("class_id") // Physical class assignment
+  dateOfBirth  DateTime? @map("date_of_birth") @db.Date
+  gender       Gender?
+  address      String?   @db.Text
+  phone        String?
+  parentName   String?   @map("parent_name")
+  parentPhone  String?   @map("parent_phone")
+  profilePhoto String?   @map("profile_photo") @db.LongText
+  status       Status    @default(ACTIVE)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  class         Class?               @relation(fields: [classId], references: [id])
+  grades        Grade[]
+  studentXp     StudentXp?
+  studentBadges StudentBadge[]
+  attendances   Attendance[]
+  achievements  StudentAchievement[]
+  submissions   AssignmentSubmission[]
+  challengeParticipations ChallengeParticipation[]
+  studentAnswers StudentAnswer[]
+  
+  // NEW RELATIONS
+  subjectEnrollments StudentSubjectEnrollment[] // Enrollments in class-subject combinations
+
+  @@map("students")
+}

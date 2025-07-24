@@ -1,13 +1,12 @@
 
 import { useState, useEffect, createContext, useContext } from "react";
-import { apiService } from "@/services/api";
-import { User } from "@/types/api";
+import { authService, User } from "../services/expressApi";
 import { toast } from "@/components/ui/use-toast";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -29,23 +28,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (identifier: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await apiService.login(email, password);
-      
-      setUser(response.user);
-      localStorage.setItem('auth_user', JSON.stringify(response.user));
-      localStorage.setItem('auth_token', response.token);
-      
-      toast({
-        title: "Login Berhasil",
-        description: `Selamat datang, ${response.user.nama}!`,
-      });
+      const response = await authService.login(identifier, password);
+
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        localStorage.setItem('auth_user', JSON.stringify(response.data.user));
+        localStorage.setItem('auth_token', response.data.token);
+
+        toast({
+          title: "Login Berhasil",
+          description: `Selamat datang, ${response.data.user.firstName}!`,
+        });
+      } else {
+        throw new Error(response.error || 'Login failed');
+      }
     } catch (error) {
       toast({
         title: "Login Gagal",
-        description: "Email atau password salah",
+        description: error instanceof Error ? error.message : "Login gagal",
         variant: "destructive",
       });
       throw error;

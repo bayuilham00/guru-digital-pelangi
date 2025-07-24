@@ -1,0 +1,111 @@
+{
+  "designSystem": {
+    "theme": {
+      "background": {
+        "gradient": {
+          "direction": "horizontal",
+          "colors": ["#3a1c71", "#d76d77", "#ffaf7b"]
+        },
+        "borderRadius": "large"
+      },
+      "primaryColor": "#ffaf7b",
+      "accentColor": "#d76d77",
+      "cardBackground": "#ffffff10"
+    },
+    "typography": {
+      "fontFamily": "Sans-serif, Rounded",
+      "fontWeight": {
+        "name": "bold",
+        "subtitle": "normal",
+        "description": "regular"
+      },
+      "fontSize": {
+        "name": "1.25rem",
+        "subtitle": "1rem",
+        "description": "0.9rem"
+      },
+      "color": {
+        "primary": "#fff",
+        "secondary": "#e0e0e0",
+        "accent": "#ffaf7b"
+      }
+    },
+    "avatar": {
+      "shape": "circle",
+      "size": "large",
+      "border": {
+        "style": "none",
+        "notificationBadge": {
+          "position": "top-right",
+          "color": "#ffd700",
+          "size": "small"
+        }
+      },
+      "background": {
+        "gradient": true
+      },
+      "icon": {
+        "type": "seedling",
+        "color": "#76c893"
+      }
+    },
+    "badge": {
+      "style": "rounded",
+      "color": "#ffaf7b",
+      "textColor": "#fff",
+      "fontWeight": "bold",
+      "padding": "0.2rem 0.6rem"
+    },
+    "ranking": {
+      "textStyle": "subtle",
+      "color": "#e0e0e0",
+      "icon": "trophy",
+      "position": "inline"
+    },
+    "statCards": {
+      "container": {
+        "background": "#ffffff10",
+        "borderRadius": "medium",
+        "padding": "0.8rem"
+      },
+      "icon": {
+        "xp": "crown",
+        "trophy": "medal"
+      },
+      "text": {
+        "fontSize": "1rem",
+        "color": "#fff"
+      },
+      "value": {
+        "fontWeight": "bold",
+        "fontSize": "1.2rem",
+        "color": "#ffaf7b"
+      }
+    },
+    "layout": {
+      "direction": "horizontal",
+      "gap": "1rem",
+      "alignment": {
+        "main": "center",
+        "cross": "center"
+      },
+      "padding": "1.2rem"
+    },
+    "effects": {
+      "shadow": {
+        "card": "0 4px 24px rgba(0,0,0,0.16)"
+      },
+      "hover": {
+        "card": {
+          "scale": 1.02,
+          "shadow": "0 8px 32px rgba(0,0,0,0.20)"
+        }
+      }
+    },
+    "iconography": {
+      "style": "minimal",
+      "color": "#ffaf7b",
+      "size": "medium"
+    }
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "designSystem": {
+    "theme": {
+      "background": {
+        "type": "gradient",
+        "direction": "vertical",
+        "colors": ["#2c1452", "#502e7d", "#6d3a9c"]
+      },
+      "surface": {
+        "card": {
+          "background": "#3d206b",
+          "borderRadius": "1rem",
+          "boxShadow": "0 4px 24px rgba(0,0,0,0.16)"
+        },
+        "highlight": "#ffd700"
+      },
+      "primaryText": "#fff",
+      "secondaryText": "#e0e0e0",
+      "accent": "#ffd700"
+    },
+    "typography": {
+      "fontFamily": "Sans-serif, Rounded",
+      "fontWeight": {
+        "title": "bold",
+        "label": "medium",
+        "value": "bold"
+      },
+      "fontSize": {
+        "title": "1.1rem",
+        "label": "0.95rem",
+        "value": "2rem"
+      }
+    },
+    "components": {
+      "sectionTitle": {
+        "icon": "star-outline",
+        "textStyle": "uppercase",
+        "fontWeight": "bold",
+        "color": "#ffd700"
+      },
+      "statCard": {
+        "layout": "vertical",
+        "background": "#3d206b",
+        "borderRadius": "0.8rem",
+        "icon": {
+          "type": "crown",
+          "color": "#ffd700",
+          "size": "1.5rem"
+        },
+        "title": {
+          "fontSize": "1rem",
+          "color": "#fff"
+        },
+        "value": {
+          "fontSize": "2rem",
+          "fontWeight": "bold",
+          "color": "#ffd700"
+        },
+        "subtitle": {
+          "fontSize": "0.9rem",
+          "color": "#e0e0e0"
+        }
+      },
+      "progressBar": {
+        "background": "#2c1452",
+        "fill": "#ffd700",
+        "height": "0.6rem",
+        "borderRadius": "0.4rem",
+        "label": {
+          "fontSize": "0.85rem",
+          "color": "#e0e0e0"
+        }
+      },
+      "hallOfFame": {
+        "background": "#3d206b",
+        "borderRadius": "1rem",
+        "title": {
+          "icon": "trophy",
+          "color": "#ffd700",
+          "fontWeight": "bold"
+        },
+        "entry": {
+          "layout": "horizontal",
+          "avatar": {
+            "type": "icon",
+            "icon": "medal",
+            "color": "#ffd700"
+          },
+          "username": {
+            "fontWeight": "bold",
+            "color": "#fff"
+          },
+          "xp": {
+            "fontSize": "0.95rem",
+            "color": "#e0e0e0"
+          },
+          "level": {
+            "fontSize": "0.9rem",
+            "color": "#ffd700"
+          },
+          "positionIcon": {
+            "type": "medal",
+            "color": "#ffd700"
+          }
+        },
+        "refreshButton": {
+          "background": "#fff",
+          "borderRadius": "0.6rem",
+          "fontWeight": "medium",
+          "color": "#3d206b",
+          "icon": "refresh"
+        }
+      }
+    },
+    "layout": {
+      "container": {
+        "padding": "1.5rem",
+        "gap": "1.2rem",
+        "direction": "horizontal"
+      },
+      "section": {
+        "gap": "1rem"
+      },
+      "alignment": {
+        "main": "start",
+        "cross": "center"
+      }
+    },
+    "effects": {
+      "cardShadow": "0 4px 24px rgba(0,0,0,0.16)",
+      "hover": {
+        "card": {
+          "scale": 1.02,
+          "boxShadow": "0 8px 32px rgba(0,0,0,0.20)"
+        }
+      }
+    },
+    "iconography": {
+      "style": "outline",
+      "primaryColor": "#ffd700",
+      "size": "medium"
+    }
+  }
+}

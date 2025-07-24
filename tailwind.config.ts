@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
+import { heroui } from "@heroui/react";
 
 export default {
 	darkMode: ["class"],
@@ -7,6 +9,7 @@ export default {
 		"./components/**/*.{ts,tsx}",
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
+		"./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
 	],
 	prefix: "",
 	theme: {
@@ -92,5 +95,5 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [tailwindcssAnimate, heroui()],
 } satisfies Config;

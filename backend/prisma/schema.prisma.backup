@@ -1,0 +1,33 @@
+// Backup schema.prisma saat ini (sebelum diperbaiki)
+// Tanggal: 2025-01-08
+
+// Prisma Schema for Guru Digital Pelangi  // Relations
+  classes           Class[]
+  grades            Grade[]
+  learningPlans     LearningPlan[]
+  questions         Question[]
+  questionCategories QuestionCategory[]
+  lessonTemplates   LessonTemplate[] // Lesson templates for this subject
+  teacherPlans      TeacherPlan[]    // Teacher plans for this subject
+  // Bank Soal relations
+  topics            Topic[]              // Topics for this subject
+  
+  // NEW RELATIONS - Multi-subject class management
+  classSubjects         ClassSubject[]              // Subject can be taught in multiple classes
+  classTeacherSubjects  ClassTeacherSubject[]       // Teachers assigned to teach this subject
+  studentEnrollments    StudentSubjectEnrollment[]  // Students enrolled in this subject
+  enrollmentApprovals   EnrollmentApproval[]        // Approval requests for this subjectQL
+// ORM: Prisma 6.1.0
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // Add this line
+}
+
+// NOTE: File ini adalah backup sebelum diperbaiki
+// Ada masalah pada header yang tercampur dengan relasi model

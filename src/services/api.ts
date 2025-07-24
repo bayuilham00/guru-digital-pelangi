@@ -13,18 +13,23 @@ import type {
   ApiResponse 
 } from "@/types/api";
 
-// Google Apps Script Web App URL (to be replaced with actual deployed URL)
-const BASE_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+// Backend API base URL
+const BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://your-backend-url.com/api' 
+  : 'http://localhost:5000/api';
 
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     try {
-      console.log(`API Request to: ${endpoint}`, options);
+      const token = localStorage.getItem('auth_token');
+      console.log(`API Request to: ${BASE_URL}/${endpoint}`, options);
       
-      const response = await fetch(`${BASE_URL}?action=${endpoint}`, {
-        method: 'POST',
+      const response = await fetch(`${BASE_URL}/${endpoint}`, {
+        method: options.method || 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+          ...options.headers,
         },
         ...options,
       });
@@ -53,122 +58,134 @@ class ApiService {
 
   // Authentication
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    return this.request('login', {
+    return this.request('auth/login', {
+      method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   }
 
   async register(userData: Omit<User, 'id'>): Promise<User> {
-    return this.request('register', {
+    return this.request('auth/register', {
+      method: 'POST',
       body: JSON.stringify(userData),
     });
   }
 
   // Dashboard
   async getDashboardStats(): Promise<DashboardStats> {
-    return this.request('getDashboardStats');
+    return this.request('dashboard/stats');
   }
 
   async getRecentActivity(): Promise<Activity[]> {
-    return this.request('getRecentActivity');
+    return this.request('dashboard/activity');
   }
 
   // Kelas Management
   async getKelas(): Promise<Kelas[]> {
-    return this.request('getKelas');
+    return this.request('classes');
   }
 
   async createKelas(kelas: Omit<Kelas, 'id'>): Promise<Kelas> {
-    return this.request('createKelas', {
+    return this.request('classes', {
+      method: 'POST',
       body: JSON.stringify(kelas),
     });
   }
 
   async updateKelas(id: string, kelas: Partial<Kelas>): Promise<Kelas> {
-    return this.request('updateKelas', {
-      body: JSON.stringify({ id, ...kelas }),
+    return this.request(`classes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(kelas),
     });
   }
 
   async deleteKelas(id: string): Promise<void> {
-    return this.request('deleteKelas', {
-      body: JSON.stringify({ id }),
+    return this.request(`classes/${id}`, {
+      method: 'DELETE',
     });
   }
 
   // Siswa Management
   async getSiswa(): Promise<Siswa[]> {
-    return this.request('getSiswa');
+    return this.request('students');
   }
 
   async createSiswa(siswa: Omit<Siswa, 'id'>): Promise<Siswa> {
-    return this.request('createSiswa', {
+    return this.request('students', {
+      method: 'POST',
       body: JSON.stringify(siswa),
     });
   }
 
   async updateSiswa(id: string, siswa: Partial<Siswa>): Promise<Siswa> {
-    return this.request('updateSiswa', {
-      body: JSON.stringify({ id, ...siswa }),
+    return this.request(`students/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(siswa),
     });
   }
 
   async deleteSiswa(id: string): Promise<void> {
-    return this.request('deleteSiswa', {
-      body: JSON.stringify({ id }),
+    return this.request(`students/${id}`, {
+      method: 'DELETE',
     });
   }
 
   // Presensi
   async getPresensi(kelas?: string, tanggal?: string): Promise<Presensi[]> {
-    return this.request('getPresensi', {
-      body: JSON.stringify({ kelas, tanggal }),
-    });
+    const params = new URLSearchParams();
+    if (kelas) params.append('classId', kelas);
+    if (tanggal) params.append('date', tanggal);
+    return this.request(`attendance?${params.toString()}`);
   }
 
   async markPresensi(presensi: Omit<Presensi, 'id'>): Promise<Presensi> {
-    return this.request('markPresensi', {
+    return this.request('attendance', {
+      method: 'POST',
       body: JSON.stringify(presensi),
     });
   }
 
   // Tugas & Nilai
   async getTugas(): Promise<Tugas[]> {
-    return this.request('getTugas');
+    return this.request('assignments');
   }
 
   async createTugas(tugas: Omit<Tugas, 'id'>): Promise<Tugas> {
-    return this.request('createTugas', {
+    return this.request('assignments', {
+      method: 'POST',
       body: JSON.stringify(tugas),
     });
   }
 
   async getNilai(tugasId?: string): Promise<Nilai[]> {
-    return this.request('getNilai', {
-      body: JSON.stringify({ tugasId }),
-    });
+    const params = new URLSearchParams();
+    if (tugasId) params.append('assignmentId', tugasId);
+    return this.request(`grades?${params.toString()}`);
   }
 
   async submitNilai(nilai: Omit<Nilai, 'id'>): Promise<Nilai> {
-    return this.request('submitNilai', {
+    return this.request('grades', {
+      method: 'POST',
       body: JSON.stringify(nilai),
     });
   }
 
   // Jurnal
   async getJurnal(): Promise<Jurnal[]> {
-    return this.request('getJurnal');
+    return this.request('journals');
   }
 
   async createJurnal(jurnal: Omit<Jurnal, 'id'>): Promise<Jurnal> {
-    return this.request('createJurnal', {
+    return this.request('journals', {
+      method: 'POST',
       body: JSON.stringify(jurnal),
     });
   }
 
   async updateJurnal(id: string, jurnal: Partial<Jurnal>): Promise<Jurnal> {
-    return this.request('updateJurnal', {
-      body: JSON.stringify({ id, ...jurnal }),
+    return this.request(`journals/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(jurnal),
     });
   }
 }
