@@ -16,61 +16,7 @@ import {
   Button,
   Spinner
 } from '@heroui/react';
-import { Edit, Trash2, MoreVertical, Award } from 'lucide-react';
-import { Student } from '../../../services/types';
-import EmptyState from '../../common/EmptyState';
-
-interface StudentTableProps {
-  students: Student[];
-  selectedKeys: Set<string>;
-  visibleColumns: Set<string>;
-  sortDescriptor: {
-    column: string;
-    direction: 'ascending' | 'descending';
-  };
-  isLoading: boolean;
-  topContent: React.ReactNode;
-  bottomContent: React.ReactNode;
-  onSelectionChange: (keys: "all" | Set<React.Key>) => void;
-  onSortChange: (descriptor: { column: React.Key; direction: "ascending" | "descending" }) => void;
-  onRowAction: (key: React.Key) => void;
-  onEdit: (student: Student) => void;
-  onDelete: (id: string) => void;
-  onCreate: () => void;
-}
-
-// Column definitions
-const columns = [
-  { name: "NAMA", uid: "name", sortable: true },
-  { name: "NISN", uid: "nisn", sortable: true },
-  { name: "KELAS", uid: "class", sortable: true },
-  { name: "JENIS KELAMIN", uid: "gender" },
-  { name: "STATUS", uid: "status", sortable: true },
-  { name: "LEVEL XP", uid: "level", sortable: true },
-  { name: "AKSI", uid: "actions" },
-];
-
-const statusColorMap = {
-  ACTIVE: "success",
-  INACTIVE: "danger", 
-  GRADUATED: "warning",
-};
-
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'ACTIVE': return 'Aktif';
-    case 'INACTIVE': return 'Tidak Aktif';
-    case 'GRADUATED': return 'Lulus';
-    default: return 'Unknown';
-  }
-};
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Button,
-  Spinner
-} from '@heroui/react';
-import { Edit, Trash2, MoreVertical, Award } from 'lucide-react';
+import { Edit, Trash2, MoreVertical, Award, Users } from 'lucide-react';
 import { Student } from '../../../services/types';
 import EmptyState from '../../common/EmptyState';
 
@@ -317,7 +263,7 @@ const StudentTable: React.FC<StudentTableProps> = ({
       <TableBody 
         emptyContent={
           <EmptyState
-            icon={() => <div className="w-16 h-16 bg-white/10 rounded-full" />}
+            icon={Users}
             title="Tidak ada siswa ditemukan"
             description="Tidak ada siswa yang sesuai dengan kriteria pencarian Anda"
             actionLabel="Tambah Siswa Pertama"
