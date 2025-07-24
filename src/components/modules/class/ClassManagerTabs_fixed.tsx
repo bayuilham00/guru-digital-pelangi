@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@heroui/react';
 import { BookOpen, Calendar, Settings } from 'lucide-react';
 import ClassManagerCore from './ClassManagerCore';
-// Import AttendanceManager directly to avoid dynamic import issues
-// import AttendanceManager from '../attendance/AttendanceManager';
+import AttendanceManager from '../attendance/AttendanceManager';
 
 interface ClassManagerTabsProps {
   onNavigateToSettings?: () => void;
@@ -84,13 +83,7 @@ const ClassManagerTabs: React.FC<ClassManagerTabsProps> = ({ onNavigateToSetting
         {/* Tab Content */}
         <div className="space-y-6">
           {activeTab === 'classes' && <ClassManagerCore />}
-          {activeTab === 'attendance' && (
-            <div className="text-center py-12">
-              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Presensi Module</h3>
-              <p className="text-gray-300">Attendance management will be loaded here</p>
-            </div>
-          )}
+          {activeTab === 'attendance' && <AttendanceManager />}
         </div>
 
         {/* Helper Text */}
